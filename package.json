@@ -1,0 +1,17 @@
+{
+  "name": "yukinoyu",
+  "private": true,
+  "description": "홋카이도 겨울 온천 마을을 배경으로 한 3인칭 힐링 메타버스",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @yukinoyu/client",
+    "build": "npm run build -w @yukinoyu/client",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2"
+  }
+}
