@@ -1,21 +1,21 @@
 import { CylinderCollider, RigidBody } from '@react-three/rapier';
-
-/** 눈길 양옆 가스등 위치 */
-const POSITIONS: [number, number][] = [];
-for (let z = 6; z >= -36; z -= 10.5) {
-  POSITIONS.push([-3.6, z], [3.6, z - 5]);
-}
+import { LAMP_POSITIONS, THIN_PROP_GROUPS, terrainHeight } from '../world/layout';
 
 /** 오타루 운하 거리 같은 가스등. 밤 분위기의 주황 포인트 조명 */
 export function Lanterns() {
   return (
     <group>
-      {POSITIONS.map(([x, z], i) => (
-        <GasLamp key={i} position={[x, 0, z]} />
+      {LAMP_POSITIONS.map(([x, z], i) => (
+        <GasLamp key={i} position={[x, terrainHeight(x, z), z]} />
       ))}
       <RigidBody type="fixed" colliders={false}>
-        {POSITIONS.map(([x, z], i) => (
-          <CylinderCollider key={i} args={[1.4, 0.15]} position={[x, 1.4, z]} />
+        {LAMP_POSITIONS.map(([x, z], i) => (
+          <CylinderCollider
+            key={i}
+            args={[1.4, 0.15]}
+            position={[x, terrainHeight(x, z) + 1.4, z]}
+            collisionGroups={THIN_PROP_GROUPS}
+          />
         ))}
       </RigidBody>
     </group>

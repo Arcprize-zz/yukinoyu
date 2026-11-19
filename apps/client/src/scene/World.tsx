@@ -3,13 +3,12 @@ import { Stars } from '@react-three/drei';
 import { CuboidCollider, RigidBody } from '@react-three/rapier';
 import { WORLD } from '@yukinoyu/shared';
 import { mulberry32 } from '../lib/random';
+import { Terrain } from './Terrain';
 
 const SKY = '#1a2747';
 const FOG = '#2b3c63';
-const SNOW = '#e6edf7';
-const PATH = '#c3cfdf';
 
-/** 하늘, 조명, 눈 덮인 땅, 원경 설산, 이동 경계 */
+/** 하늘, 조명, 지형, 원경 설산, 이동 경계 */
 export function World() {
   const h = WORLD.halfSize;
 
@@ -30,65 +29,23 @@ export function World() {
         shadow-camera-right={h}
         shadow-camera-top={h}
         shadow-camera-bottom={-h}
-        shadow-camera-far={150}
+        shadow-camera-far={160}
         shadow-bias={-0.0004}
         shadow-normalBias={0.04}
       />
       <Stars radius={220} depth={60} count={2500} factor={5} saturation={0} fade speed={0.4} />
 
-      {/* 땅 */}
-      <mesh rotation-x={-Math.PI / 2} receiveShadow>
-        <planeGeometry args={[600, 600]} />
-        <meshStandardMaterial color={SNOW} roughness={0.95} />
-      </mesh>
-      {/* 기차역에서 온천까지 이어지는 다져진 눈길 */}
-      <mesh rotation-x={-Math.PI / 2} position={[0, 0.01, -14]} receiveShadow>
-        <planeGeometry args={[5, 56]} />
-        <meshStandardMaterial color={PATH} roughness={1} />
-      </mesh>
-
-      <SnowMounds />
+      <Terrain />
       <Mountains />
 
+      {/* 보이지 않는 경계 벽 */}
       <RigidBody type="fixed" colliders={false}>
-        <CuboidCollider args={[300, 0.5, 300]} position={[0, -0.5, 0]} />
-        {/* 보이지 않는 경계 벽 */}
-        <CuboidCollider args={[h, 5, 0.5]} position={[0, 5, -h]} />
-        <CuboidCollider args={[h, 5, 0.5]} position={[0, 5, h]} />
-        <CuboidCollider args={[0.5, 5, h]} position={[-h, 5, 0]} />
-        <CuboidCollider args={[0.5, 5, h]} position={[h, 5, 0]} />
+        <CuboidCollider args={[h, 10, 0.5]} position={[0, 10, -h]} />
+        <CuboidCollider args={[h, 10, 0.5]} position={[0, 10, h]} />
+        <CuboidCollider args={[0.5, 10, h]} position={[-h, 10, 0]} />
+        <CuboidCollider args={[0.5, 10, h]} position={[h, 10, 0]} />
       </RigidBody>
     </>
-  );
-}
-
-/** 낮게 쌓인 눈 더미. 충돌 없이 발이 살짝 묻히게 둔다 */
-function SnowMounds() {
-  const mounds = useMemo(() => {
-    const rand = mulberry32(7);
-    return Array.from({ length: 40 }, () => {
-      const x = (rand() * 2 - 1) * 56;
-      const z = (rand() * 2 - 1) * 56;
-      const s = 1.5 + rand() * 3.5;
-      return { x, z, s, ry: rand() * Math.PI };
-    }).filter((m) => Math.abs(m.x) > 4);
-  }, []);
-
-  return (
-    <group>
-      {mounds.map((m, i) => (
-        <mesh
-          key={i}
-          position={[m.x, -m.s * 0.12, m.z]}
-          rotation-y={m.ry}
-          scale={[m.s * 1.4, m.s * 0.35, m.s]}
-          receiveShadow
-        >
-          <sphereGeometry args={[1, 16, 10]} />
-          <meshStandardMaterial color={SNOW} roughness={0.95} />
-        </mesh>
-      ))}
-    </group>
   );
 }
 

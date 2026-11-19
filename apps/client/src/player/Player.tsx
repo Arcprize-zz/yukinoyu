@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useKeyboardControls } from '@react-three/drei';
 import {
@@ -11,7 +11,8 @@ import {
 import * as THREE from 'three';
 import { WORLD, type PlayerAction } from '@yukinoyu/shared';
 import type { CtrlName } from '../controls';
-import { useGame } from '../store';
+import { DEBUG, debugInfo, useGame } from '../store';
+import { CAMERA_RAY_GROUPS, ZONES, terrainHeight, zoneAt, type ZoneId } from '../world/layout';
 import { Avatar } from './Avatar';
 import { useOrbitCamera } from './useOrbitCamera';
 
@@ -25,6 +26,9 @@ const GRAVITY = 22;
 const JUMP_SPEED = 7.5;
 /** 카메라가 바라보는 높이(발 기준) */
 const LOOK_HEIGHT = 1.3;
+/** 카메라가 벽에서 떨어져 있을 거리, 캐릭터에 가장 가까이 올 수 있는 거리 */
+const CAMERA_WALL_GAP = 0.3;
+const CAMERA_MIN_DISTANCE = 1.2;
 
 type Kcc = ReturnType<ReturnType<typeof useRapier>['world']['createCharacterController']>;
 
@@ -34,6 +38,7 @@ const right = new THREE.Vector3();
 const move = new THREE.Vector3();
 const lookTarget = new THREE.Vector3();
 const camGoal = new THREE.Vector3();
+const camDir = new THREE.Vector3();
 
 /** 차이가 가장 작은 쪽으로 각도를 보간 */
 function lerpAngle(a: number, b: number, t: number) {
@@ -46,8 +51,11 @@ export function Player() {
   const collider = useRef<RapierCollider>(null);
   const avatarRoot = useRef<THREE.Group>(null);
   const avatarBob = useRef<THREE.Group>(null);
-  const { world } = useRapier();
+  const { world, rapier } = useRapier();
   const kcc = useRef<Kcc | null>(null);
+  const cameraRay = useMemo(() => new rapier.Ray({ x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 1 }), [rapier]);
+  const lastZone = useRef<ZoneId | null | undefined>(undefined);
+  const setZone = useGame((s) => s.setZone);
   const [, getKeys] = useKeyboardControls<CtrlName>();
   const orbit = useOrbitCamera();
 
@@ -68,6 +76,20 @@ export function Player() {
       kcc.current = null;
     };
   }, [world]);
+
+  // 디버그: 숫자키 1~4로 각 구역에 순간이동
+  useEffect(() => {
+    if (!DEBUG) return;
+    const onKey = (e: KeyboardEvent) => {
+      const zone = ZONES[Number(e.code.replace('Digit', '')) - 1];
+      if (!zone || !body.current) return;
+      const [x, y, z] = zone.teleport;
+      body.current.setTranslation({ x, y, z }, true);
+      motion.current.vy = 0;
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   useFrame((state, delta) => {
     const b = body.current;
@@ -138,12 +160,24 @@ export function Player() {
     smoothLook.current.lerp(lookTarget, 1 - Math.exp(-10 * dt));
     const look = smoothLook.current;
     const cp = Math.cos(o.pitch);
-    camGoal.set(
-      look.x + Math.sin(o.yaw) * cp * o.distance,
-      Math.max(look.y + Math.sin(o.pitch) * o.distance, 0.4),
-      look.z + Math.cos(o.yaw) * cp * o.distance,
-    );
-    state.camera.position.lerp(camGoal, 1 - Math.exp(-14 * dt));
+    camDir.set(Math.sin(o.yaw) * cp, Math.sin(o.pitch), Math.cos(o.yaw) * cp);
+
+    // 캐릭터와 카메라 사이에 건물, 지형이 있으면 카메라를 그 앞으로 당긴다.
+    // 나무, 가스등(THIN_PROP_GROUPS)은 레이가 통과해서 숲에서 카메라가 튀지 않는다
+    let distance = o.distance;
+    cameraRay.origin = look;
+    cameraRay.dir = camDir;
+    const hit = world.castRay(cameraRay, o.distance + CAMERA_WALL_GAP, true, undefined, CAMERA_RAY_GROUPS, col);
+    if (hit) distance = Math.max(hit.timeOfImpact - CAMERA_WALL_GAP, CAMERA_MIN_DISTANCE);
+
+    camGoal.copy(look).addScaledVector(camDir, distance);
+    camGoal.y = Math.max(camGoal.y, terrainHeight(camGoal.x, camGoal.z) + 0.4);
+    // 벽 때문에 당겨질 때는 바로, 멀어질 때는 부드럽게
+    if (hit && camGoal.distanceToSquared(look) < state.camera.position.distanceToSquared(look)) {
+      state.camera.position.copy(camGoal);
+    } else {
+      state.camera.position.lerp(camGoal, 1 - Math.exp(-14 * dt));
+    }
     state.camera.lookAt(look);
 
     // 6) UI에 보여 줄 상태는 바뀔 때만 store로
@@ -152,6 +186,14 @@ export function Player() {
       lastAction.current = action;
       setAction(action);
     }
+    const zone = zoneAt(next.x, next.z);
+    if (zone !== lastZone.current) {
+      lastZone.current = zone;
+      setZone(zone);
+    }
+    debugInfo.x = next.x;
+    debugInfo.y = next.y - FOOT_OFFSET;
+    debugInfo.z = next.z;
   });
 
   return (

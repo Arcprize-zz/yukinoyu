@@ -2,9 +2,11 @@ import { useMemo } from 'react';
 import { Instance, Instances } from '@react-three/drei';
 import { CylinderCollider, RigidBody } from '@react-three/rapier';
 import { mulberry32 } from '../lib/random';
+import { THIN_PROP_GROUPS, isReserved, terrainHeight } from '../world/layout';
 
 interface Tree {
   x: number;
+  y: number;
   z: number;
   s: number;
 }
@@ -20,22 +22,21 @@ function generateTrees(): Tree[] {
   const rand = mulberry32(2026);
   const trees: Tree[] = [];
   let guard = 0;
-  while (trees.length < 150 && guard++ < 4000) {
-    const x = (rand() * 2 - 1) * 57;
-    const z = (rand() * 2 - 1) * 57;
-    // 가운데 길과 스폰 주변은 비운다
-    if (Math.abs(x) < 7 && z > -45 && z < 20) continue;
-    if (Math.hypot(x, z - 12) < 10) continue;
-    // 서로 너무 붙지 않게
+  while (trees.length < 170 && guard++ < 6000) {
+    const x = (rand() * 2 - 1) * 58;
+    const z = (rand() * 2 - 1) * 58;
+    const s = 0.8 + rand() * 0.9;
+    // 가장 아래 잎 층 반지름(1.5 × s)만큼 떨어뜨려야 가지가 길이나 소품을 덮지 않는다
+    if (isReserved(x, z, LAYERS[0][1] * s + 0.3)) continue;
     if (trees.some((t) => Math.hypot(t.x - x, t.z - z) < 3.2)) continue;
-    trees.push({ x, z, s: 0.8 + rand() * 0.9 });
+    trees.push({ x, y: terrainHeight(x, z), z, s });
   }
   return trees;
 }
 
 /**
  * 눈 쌓인 침엽수.
- * 같은 모양을 InstancedMesh로 그려서 나무 150그루를 드로우콜 3번으로 처리한다.
+ * 같은 모양을 InstancedMesh로 그려서 나무 170그루를 드로우콜 3번으로 처리한다.
  */
 export function Trees() {
   const trees = useMemo(generateTrees, []);
@@ -46,7 +47,7 @@ export function Trees() {
         <cylinderGeometry args={[0.18, 0.25, 1.2, 6]} />
         <meshStandardMaterial color="#5a4336" roughness={1} />
         {trees.map((t, i) => (
-          <Instance key={i} position={[t.x, 0.6 * t.s, t.z]} scale={t.s} />
+          <Instance key={i} position={[t.x, t.y + 0.6 * t.s, t.z]} scale={t.s} />
         ))}
       </Instances>
 
@@ -57,7 +58,7 @@ export function Trees() {
           LAYERS.map(([y, r, h], j) => (
             <Instance
               key={`${i}-${j}`}
-              position={[t.x, y * t.s, t.z]}
+              position={[t.x, t.y + y * t.s, t.z]}
               scale={[r * t.s, h * t.s, r * t.s]}
             />
           )),
@@ -72,7 +73,7 @@ export function Trees() {
           LAYERS.map(([y, r, h], j) => (
             <Instance
               key={`${i}-${j}`}
-              position={[t.x, (y + h * 0.18) * t.s, t.z]}
+              position={[t.x, t.y + (y + h * 0.18) * t.s, t.z]}
               scale={[r * 0.82 * t.s, h * 0.65 * t.s, r * 0.82 * t.s]}
             />
           )),
@@ -81,7 +82,12 @@ export function Trees() {
 
       <RigidBody type="fixed" colliders={false}>
         {trees.map((t, i) => (
-          <CylinderCollider key={i} args={[2, 0.35 * t.s]} position={[t.x, 2, t.z]} />
+          <CylinderCollider
+            key={i}
+            args={[2, 0.35 * t.s]}
+            position={[t.x, t.y + 2, t.z]}
+            collisionGroups={THIN_PROP_GROUPS}
+          />
         ))}
       </RigidBody>
     </group>
