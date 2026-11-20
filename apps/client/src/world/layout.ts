@@ -139,6 +139,38 @@ export function isReserved(x: number, z: number, margin = 0) {
   return ZONES.some((zone) => Math.hypot(x - zone.center[0], z - zone.center[1]) < zone.radius + margin);
 }
 
+// ── 노천온천 ──────────────────────────────────────────
+
+/**
+ * 온천은 높이 1m 데크 안에 파인 탕이다(지형 충돌체를 뚫지 않기 위해).
+ *   데크 바깥: x 28~42, z -30~-18 / 탕: x 32~40, z -28~-22
+ *   탕 바닥 0.35m, 수면 0.95m (물 깊이 0.6m)
+ */
+export const ONSEN = {
+  deckTop: 1.0,
+  pool: { x0: 32, x1: 40, z0: -28, z1: -22, floor: 0.35, water: 0.95 },
+  /** 탕 옆 정자에 매단 등불. 수면 반사광의 기준 */
+  lamp: [40.4, 3.15, -25] as [number, number, number],
+};
+
+/**
+ * 자동 입장 경로. 데크 입구 → 바위 계단(경사로) 위 → 아래 → 자리.
+ * 경사로는 z -25를 따라 x 32(데크) → 33.6(탕 바닥)으로 내려간다
+ */
+export const ONSEN_PATH = {
+  /** 이 점에서 2.2m 안이면 '온천 즐기기' 버튼이 뜬다 */
+  entrance: [30.6, -25] as Vec2,
+  entranceRadius: 2.2,
+  rampTop: [31.8, -25] as Vec2,
+  rampBottom: [34.0, -25] as Vec2,
+};
+
+/** 발 위치가 탕 바닥에 있는지(나가는 계단 위는 제외) */
+export function isInPool(x: number, footY: number, z: number) {
+  const { x0, x1, z0, z1, floor } = ONSEN.pool;
+  return x > x0 + 0.05 && x < x1 - 0.05 && z > z0 + 0.05 && z < z1 - 0.05 && footY < floor + 0.15;
+}
+
 // ── 가스등 ────────────────────────────────────────────
 
 export const LAMP_POSITIONS: Vec2[] = [

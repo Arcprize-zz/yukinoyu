@@ -59,15 +59,29 @@ apps/server      (4주차 예정) Colyseus. 백엔드와 DB는 맥북에서 돌�
 ### 물리 (Rapier)
 - `<Physics timeStep="vary">`를 유지한다. 고정 스텝이면 고주사율 모니터에서 캐릭터 이동량이 사라진다
 - 캐릭터가 오를 계단 한 칸은 0.25m 이하로 한다. 캡슐 반지름(0.35m)에 가까우면 autostep이 동작하지 않는다
+- 느리게 걷는 곳(온천 안 1.4m/s)에서는 0.22m 계단도 autostep이 실패한다. 계단은 보이기만 하고, 밟는 건 경사로 충돌체(50° 이하)로 만든다(`Ryokan.tsx`의 `PoolRamp`)
 - 나무, 가스등처럼 가는 물체의 충돌체에는 `THIN_PROP_GROUPS`를 준다(카메라 레이가 통과)
+- 충돌체에 `collisionGroups={undefined}`를 넘기지 않는다. 그룹이 0이 되어 카메라 레이가 그 벽을 통과한다. 지정할 때만 넘긴다(`kit.tsx`의 `Block` 참고)
 - 보이는 모양과 충돌체는 `kit.tsx`의 `Block`처럼 한곳에서 함께 만든다
+
+### 셰이더
+- 커스텀 셰이더는 `lib/useShaderMaterial.ts`로 만들고, 매 프레임 값은 반환된 `material.uniforms`를 고친다
+- `<shaderMaterial uniforms={u} />`는 쓰지 않는다. 머티리얼이 uniforms를 복사해서 `u`를 바꿔도 GPU에 전달되지 않는다(시간이 멈춘 셰이더)
+- `smoothstep(e0, e1, x)`는 `e0 < e1`로 쓴다. 뒤집으려면 `1.0 - smoothstep(...)`(뒤집힌 인자는 GLSL에서 정의되지 않음)
+- 캐릭터와 카메라 사이에 자주 끼는 소품은 `lib/nearFadeMaterial.ts`로 카메라 근처에서 디더링해 사라지게 한다
+
+### 온천 자리
+- 자리 좌표와 빈자리 고르기(`ONSEN_SEATS`, `pickSeat`, `seatsNear`)는 `packages/shared/src/onsen.ts`에 둔다. 4주차 서버가 같은 함수로 자리 예약을 판정한다
+- 자리 예약은 지금은 zustand `seats`(서버 흉내), 4주차부터 서버가 내려주는 값으로 바꾼다. 클라이언트는 예약 결과를 따르기만 한다
+- 자동 입장/퇴장은 `player/bathAutopilot.ts`. Player는 요청을 전하고 방향만 받아 움직인다
 
 ### 입력
 - 키는 `event.code`(`KeyW` 등)로 받는다. 한글 입력 상태에서도 동작해야 한다
 
 ## 디버그
 
-- `?debug` : 좌표, FPS, 숫자키 `1`~`4`로 구역 순간이동
+- `?debug` : 좌표, 카메라 위치, FPS, 숫자키 `1`~`4`로 구역 순간이동, `window.__physics`(Rapier world)
+  - `B` : 빈자리에 앉는 가짜 입욕객 추가 / `V` : 내가 가는 자리에 예약 없이 서 있는 가짜 입욕객 추가
 - `?debug=physics` : 충돌체 외곽선까지
 
 ## Git

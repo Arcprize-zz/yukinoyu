@@ -3,6 +3,8 @@
  * 네트워크로 오가는 모양은 여기서만 정의한다.
  */
 
+export * from './onsen';
+
 export type Vec3 = readonly [number, number, number];
 
 /** 월드 크기와 스폰 위치. 1 = 1m, 처음 바라보는 방향이 -z */

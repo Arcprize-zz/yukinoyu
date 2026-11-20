@@ -15,6 +15,7 @@ import { OnsenStreet } from './zones/OnsenStreet';
 import { Ryokan } from './zones/Ryokan';
 import { BirchHill } from './zones/BirchHill';
 import { Player } from './player/Player';
+import { OtherBathers } from './player/OtherBathers';
 import { Hud } from './ui/Hud';
 
 const [sx, sy, sz] = WORLD.spawn;
@@ -41,6 +42,7 @@ export function App() {
             <Lanterns />
             <Player />
           </Physics>
+          <OtherBathers />
           <Snowfall />
           <Effects />
         </Suspense>

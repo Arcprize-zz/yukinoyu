@@ -1,6 +1,8 @@
-import { useMemo, useRef } from 'react';
+import { useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
+import { ONSEN } from '../world/layout';
+import { useShaderMaterial } from '../lib/useShaderMaterial';
 
 const COUNT = 7000;
 /** 카메라를 중심으로 눈이 내리는 상자 크기 */
@@ -12,6 +14,8 @@ const vertexShader = /* glsl */ `
   uniform vec3 uCenter;
   uniform float uPixelRatio;
   uniform float uSize;
+  uniform vec4 uMeltRect;   // 온천 탕 x0, z0, x1, z1
+  uniform float uMeltFloor; // 수면 높이
   attribute float aSpeed;
   attribute float aPhase;
   varying float vAlpha;
@@ -34,6 +38,12 @@ const vertexShader = /* glsl */ `
     gl_PointSize = min(uSize * uPixelRatio * (12.0 / -mv.z), 28.0);
     // 땅에 닿기 직전과 먼 곳은 흐리게
     vAlpha = smoothstep(0.0, 1.5, p.y) * (1.0 - smoothstep(22.0, 40.0, -mv.z));
+    // 탕 위로 떨어지는 눈은 김 속에서 녹아 수면에 닿기 전에 사라진다
+    float inside = smoothstep(uMeltRect.x - 0.6, uMeltRect.x + 0.4, p.x)
+                 * smoothstep(uMeltRect.z + 0.6, uMeltRect.z - 0.4, p.x)
+                 * smoothstep(uMeltRect.y - 0.6, uMeltRect.y + 0.4, p.z)
+                 * smoothstep(uMeltRect.w + 0.6, uMeltRect.w - 0.4, p.z);
+    vAlpha *= 1.0 - inside * (1.0 - smoothstep(uMeltFloor + 0.3, uMeltFloor + 2.8, p.y));
   }
 `;
 
@@ -51,8 +61,6 @@ const fragmentShader = /* glsl */ `
 export function Snowfall() {
   const camera = useThree((s) => s.camera);
   const dpr = useThree((s) => s.viewport.dpr);
-  const material = useRef<THREE.ShaderMaterial>(null);
-
   const geometry = useMemo(() => {
     const positions = new Float32Array(COUNT * 3);
     const speeds = new Float32Array(COUNT);
@@ -71,32 +79,27 @@ export function Snowfall() {
     return g;
   }, []);
 
-  const uniforms = useMemo(
-    () => ({
+  const material = useShaderMaterial({
+    vertexShader,
+    fragmentShader,
+    uniforms: {
       uTime: { value: 0 },
       uCenter: { value: new THREE.Vector3() },
       uPixelRatio: { value: 1 },
       uSize: { value: 3.5 },
-    }),
-    [],
-  );
-
-  useFrame((state) => {
-    uniforms.uTime.value = state.clock.elapsedTime;
-    uniforms.uCenter.value.copy(camera.position);
-    uniforms.uPixelRatio.value = dpr;
+      uMeltRect: { value: new THREE.Vector4(ONSEN.pool.x0, ONSEN.pool.z0, ONSEN.pool.x1, ONSEN.pool.z1) },
+      uMeltFloor: { value: ONSEN.pool.water },
+    },
+    transparent: true,
+    depthWrite: false,
   });
 
-  return (
-    <points geometry={geometry} frustumCulled={false}>
-      <shaderMaterial
-        ref={material}
-        vertexShader={vertexShader}
-        fragmentShader={fragmentShader}
-        uniforms={uniforms}
-        transparent
-        depthWrite={false}
-      />
-    </points>
-  );
+  useFrame((state) => {
+    const u = material.uniforms;
+    u.uTime.value = state.clock.elapsedTime;
+    u.uCenter.value.copy(camera.position);
+    u.uPixelRatio.value = dpr;
+  });
+
+  return <points geometry={geometry} material={material} frustumCulled={false} />;
 }

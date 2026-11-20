@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react';
 import type { PlayerAction } from '@yukinoyu/shared';
-import { DEBUG, debugInfo, useGame } from '../store';
+import { DEBUG, playerFrame, useGame } from '../store';
 import { ZONES } from '../world/layout';
+import { OnsenButton } from './OnsenButton';
 
 const ACTION_LABEL: Record<PlayerAction, string> = {
   idle: '쉬는 중',
@@ -25,6 +26,7 @@ export function Hud() {
       </div>
       <div className="hud__status">{ACTION_LABEL[action]}</div>
       <ZoneToast />
+      <OnsenButton />
       {DEBUG && <DebugReadout />}
       <div className="hud__keys">
         <span>
@@ -68,8 +70,10 @@ function DebugReadout() {
     let raf = 0;
     const tick = () => {
       if (el.current) {
-        const { x, y, z } = debugInfo;
-        el.current.textContent = `x ${x.toFixed(1)}  y ${y.toFixed(2)}  z ${z.toFixed(1)}`;
+        const { x, y, z, camera: c } = playerFrame;
+        el.current.textContent =
+          `x ${x.toFixed(1)}  y ${y.toFixed(2)}  z ${z.toFixed(1)}\n` +
+          `cam ${c[0].toFixed(1)}  ${c[1].toFixed(2)}  ${c[2].toFixed(1)}`;
       }
       raf = requestAnimationFrame(tick);
     };

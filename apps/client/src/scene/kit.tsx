@@ -59,7 +59,9 @@ export function Block({
         <CuboidCollider
           args={[size[0] / 2, size[1] / 2, size[2] / 2]}
           position={center}
-          collisionGroups={collisionGroups}
+          // undefined를 그대로 넘기면 그룹이 0(어디에도 안 속함)이 되어 카메라 레이가 통과한다.
+          // 지정했을 때만 넘긴다
+          {...(collisionGroups !== undefined && { collisionGroups })}
         />
       )}
     </>
