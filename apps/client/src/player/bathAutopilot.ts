@@ -1,6 +1,6 @@
 import type * as THREE from 'three';
 import { ONSEN_SEATS, pickSeat, seatsNear } from '@yukinoyu/shared';
-import { ONSEN_PATH, type Vec2 } from '../world/layout';
+import { ONSEN_PATH, isNearOnsenEntrance, type Vec2 } from '../world/layout';
 import { ME, otherPlayers, useGame, type BathMode } from '../store';
 
 /** 이 거리 안에 들어오면 다음 경유지로 */
@@ -37,9 +37,13 @@ export class BathAutopilot {
     return ONSEN_SEATS.length - this.blockedSeats().size;
   }
 
-  /** 입장 시작. 빈자리가 없으면 false */
-  enter(): boolean {
-    if (this.mode !== 'free') return false;
+  /**
+   * 입장 시작. 입구 근처가 아니거나 빈자리가 없으면 false.
+   * 버튼은 입구에서만 보이지만, 요청이 어디서 왔든 받는 쪽에서 위치를 다시 확인한다
+   * (사라진 버튼의 키 리스너가 남아 있어도 엉뚱한 곳에서 출발하지 않게)
+   */
+  enter(x: number, footY: number, z: number): boolean {
+    if (this.mode !== 'free' || !isNearOnsenEntrance(x, footY, z)) return false;
     const seat = pickSeat(this.blockedSeats());
     if (seat === null || !useGame.getState().claimSeat(seat, ME)) return false;
     this.seat = seat;

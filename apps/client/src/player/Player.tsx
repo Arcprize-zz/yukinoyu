@@ -14,10 +14,9 @@ import type { CtrlName } from '../controls';
 import { DEBUG, playerFrame, useGame } from '../store';
 import {
   CAMERA_RAY_GROUPS,
-  ONSEN,
-  ONSEN_PATH,
   ZONES,
   isInPool,
+  isNearOnsenEntrance,
   terrainHeight,
   zoneAt,
   type ZoneId,
@@ -157,7 +156,7 @@ export function Player() {
     // 1-2) 온천 자동 입장/퇴장. 버튼 요청을 처리하고, 방향키를 누르면 조작을 돌려준다
     const game = useGame.getState();
     if (game.bathRequest) {
-      if (game.bathRequest === 'enter') autopilot.enter();
+      if (game.bathRequest === 'enter') autopilot.enter(t.x, t.y - FOOT_OFFSET, t.z);
       else autopilot.exit(inBath);
       game.requestBath(null);
     }
@@ -284,11 +283,7 @@ export function Player() {
     state.camera.position.toArray(playerFrame.camera);
 
     // 7) 데크 입구 근처면 '온천 즐기기' 버튼을 띄운다
-    const [ex, ez] = ONSEN_PATH.entrance;
-    const near =
-      autopilot.mode === 'free' &&
-      next.y - FOOT_OFFSET > ONSEN.deckTop - 0.2 &&
-      Math.hypot(next.x - ex, next.z - ez) < ONSEN_PATH.entranceRadius;
+    const near = autopilot.mode === 'free' && isNearOnsenEntrance(next.x, next.y - FOOT_OFFSET, next.z);
     if (near !== game.nearOnsenEntrance) game.setNearOnsenEntrance(near);
   });
 

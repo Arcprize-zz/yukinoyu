@@ -165,6 +165,15 @@ export const ONSEN_PATH = {
   rampBottom: [34.0, -25] as Vec2,
 };
 
+/**
+ * 데크 위 입구 근처인지. '온천 즐기기' 버튼을 띄울 때와,
+ * 입장 요청을 받았을 때 다시 확인할 때 같은 기준을 쓴다
+ */
+export function isNearOnsenEntrance(x: number, footY: number, z: number) {
+  const [ex, ez] = ONSEN_PATH.entrance;
+  return footY > ONSEN.deckTop - 0.2 && Math.hypot(x - ex, z - ez) < ONSEN_PATH.entranceRadius;
+}
+
 /** 발 위치가 탕 바닥에 있는지(나가는 계단 위는 제외) */
 export function isInPool(x: number, footY: number, z: number) {
   const { x0, x1, z0, z1, floor } = ONSEN.pool;
