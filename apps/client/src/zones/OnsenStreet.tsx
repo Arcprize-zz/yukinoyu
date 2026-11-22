@@ -49,7 +49,7 @@ export function OnsenStreet() {
       <Block from={[px - 0.8, 2.6, pz - 0.8]} to={[px + 0.8, 2.9, pz + 0.8]} color={PALETTE.snow} collide={false} />
       <pointLight position={[px, 1.95, pz]} color="#ffb070" intensity={12} distance={9} decay={2} />
 
-      {/* 소원 등롱 벽(6주차 방명록 자리) */}
+      {/* 소원 등롱 벽(6단계 방명록 자리) */}
       <Block from={[-5, 0, -13.5]} to={[5, 0.25, -12.7]} color={PALETTE.stoneDark} />
       {[-5, 0, 5].map((x) => (
         <Block key={x} from={[x - 0.15, 0.25, -13.25]} to={[x + 0.15, 2.8, -12.95]} color={PALETTE.woodDark} />

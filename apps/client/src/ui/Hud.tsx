@@ -22,7 +22,7 @@ export function Hud() {
         <h1>
           유키노유<span>雪の湯</span>
         </h1>
-        <p>홋카이도의 겨울 · 프로토타입 1주차</p>
+        <p>홋카이도의 겨울 · 프로토타입</p>
       </div>
       <div className="hud__status">{ACTION_LABEL[action]}</div>
       <ZoneToast />

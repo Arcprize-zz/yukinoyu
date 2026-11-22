@@ -13,7 +13,7 @@
 - 대상: PC 웹 브라우저만(모바일 미지원)
 - 그래픽: 스타일라이즈드 로우폴리. Blender를 쓰지 않는다. 모델은 코드로 만들거나 CC0 에셋(Quaternius, Kenney, Poly Haven)을 쓴다
 - 캐릭터: 모든 방문객이 같은 모양이고 모자, 목도리 색만 다르다
-- 멀티플레이: 4주차부터. 회원가입 없음, 무작위 별명, 자유 채팅 대신 이모트
+- 멀티플레이: 4단계부터. 회원가입 없음, 무작위 별명, 자유 채팅 대신 이모트
 - 음악은 상업적 이용이 가능한 라이선스만 쓴다
 - 참고 서비스(sansatemple.com)의 화면, 이름, 기능을 그대로 따라 하지 않는다
 
@@ -40,7 +40,7 @@ apps/client      React 19 + TypeScript + Vite + React Three Fiber + drei + rapie
   src/player     캐릭터 컨트롤러, 3인칭 카메라, 아바타
   src/ui         HUD
 packages/shared  클라이언트와 서버가 함께 쓰는 타입, 상수(PlayerSnapshot, WORLD)
-apps/server      (4주차 예정) Colyseus. 백엔드와 DB는 맥북에서 돌린다
+apps/server      (4단계 예정) Colyseus. 백엔드와 DB는 맥북에서 돌린다
 ```
 
 ## 규칙
@@ -70,9 +70,21 @@ apps/server      (4주차 예정) Colyseus. 백엔드와 DB는 맥북에서 돌�
 - `smoothstep(e0, e1, x)`는 `e0 < e1`로 쓴다. 뒤집으려면 `1.0 - smoothstep(...)`(뒤집힌 인자는 GLSL에서 정의되지 않음)
 - 캐릭터와 카메라 사이에 자주 끼는 소품은 `lib/nearFadeMaterial.ts`로 카메라 근처에서 디더링해 사라지게 한다
 
+### 에셋
+- 외부 모델은 CC0만 쓰고, 넣을 때마다 `CREDITS.md`에 출처와 바꾼 점을 적는다
+- 쓰는 파일만 `apps/client/public/models/<제작자>/`에 넣는다(팩 전체를 넣지 않는다). 무거운 텍스처(노멀맵 등)는 빼고 단색 재질로 바꾼다
+- 같은 모델 여럿은 `Instances`에 GLTF의 `geometry`, `material`을 넘겨 그린다(`scene/Props.tsx`, `scene/Trees.tsx` 참고)
+- 소품 배치는 `layout.ts`의 `PROPS`에 둔다. 다른 소품이 피해야 하면 `nearProp()`을 쓴다
+- 눈 쌓인 표현은 `lib/snowCover.ts`(위를 향한 면을 하얗게)를 재질에 덧씌운다
+
+### 후처리
+- `EffectComposer`는 렌더러 톤매핑을 끈다. 톤매핑은 `<ToneMapping>`(ACES Filmic) 효과로 한다
+- 순서: N8AO → Bloom → ToneMapping → Vignette. 블룸은 톤매핑 전에 둔다
+- 발광체(등불)는 밝기를 너무 올리면 톤매핑에서 하얗게 탄다. 주황빛이 남는 정도로(emissiveIntensity 2~2.5)
+
 ### 온천 자리
-- 자리 좌표와 빈자리 고르기(`ONSEN_SEATS`, `pickSeat`, `seatsNear`)는 `packages/shared/src/onsen.ts`에 둔다. 4주차 서버가 같은 함수로 자리 예약을 판정한다
-- 자리 예약은 지금은 zustand `seats`(서버 흉내), 4주차부터 서버가 내려주는 값으로 바꾼다. 클라이언트는 예약 결과를 따르기만 한다
+- 자리 좌표와 빈자리 고르기(`ONSEN_SEATS`, `pickSeat`, `seatsNear`)는 `packages/shared/src/onsen.ts`에 둔다. 4단계 서버가 같은 함수로 자리 예약을 판정한다
+- 자리 예약은 지금은 zustand `seats`(서버 흉내), 4단계부터 서버가 내려주는 값으로 바꾼다. 클라이언트는 예약 결과를 따르기만 한다
 - 자동 입장/퇴장은 `player/bathAutopilot.ts`. Player는 요청을 전하고 방향만 받아 움직인다
 
 ### 입력
@@ -87,16 +99,17 @@ apps/server      (4주차 예정) Colyseus. 백엔드와 DB는 맥북에서 돌�
 ## Git
 
 - 커밋은 사용자가 요청할 때만 한다
-- 주차별 작업은 `weekN-주제` 브랜치에서 한다(예: `week2-onsen`)
+- 단계별 작업은 `stepN-주제` 브랜치에서 한다(예: `step3-art`). 주 단위가 아니라 로드맵 단계 단위로 나눈다
+- 단계를 마치면 main에 합치고 푸시한다. 커밋 메시지는 `feat: N단계 - 내용` 형식
 - 커밋 메시지는 한국어로, `feat:`, `fix:` 같은 접두어를 붙인다
 
-## 로드맵 (주당 약 17시간)
+## 로드맵 (단계별)
 
-| 주차 | 목표 |
+| 단계 | 목표 |
 |---|---|
 | 1 ✅ | 모노레포, R3F 세팅, 캐릭터 이동과 카메라, 지형, 4구역 그레이박스, 충돌 |
-| 2 | 노천온천: 수면 셰이더, 김, 입욕 연출 |
-| 3 | 에셋 교체, 조명, 포스트프로세싱 |
+| 2 ✅ | 노천온천: 수면 셰이더, 김, 입욕 연출 |
+| 3 ✅ | 에셋 교체, 조명, 포스트프로세싱 |
 | 4 | Colyseus 서버, 별명, 위치 보간 동기화 |
 | 5 | 동작 동기화, 재접속, 오디오(BGM, 환경음) |
 | 6 | 소원 등롱(API + DB + 신고/필터) |

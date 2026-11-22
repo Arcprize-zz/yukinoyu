@@ -8,6 +8,7 @@ import { DEBUG, DEBUG_PHYSICS } from './store';
 import { World } from './scene/World';
 import { Trees } from './scene/Trees';
 import { Lanterns } from './scene/Lanterns';
+import { Props } from './scene/Props';
 import { Snowfall } from './scene/Snowfall';
 import { Effects } from './scene/Effects';
 import { Station } from './zones/Station';
@@ -40,6 +41,7 @@ export function App() {
             <BirchHill />
             <Trees />
             <Lanterns />
+            <Props />
             <Player />
           </Physics>
           <OtherBathers />

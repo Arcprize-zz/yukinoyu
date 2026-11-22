@@ -193,6 +193,68 @@ export const LAMP_POSITIONS: Vec2[] = [
   [-19.5, -24],
 ];
 
+// ── 소품(Kenney Holiday Kit, CC0) ───────────────────────
+
+export type PropKind = 'snowPile' | 'rocksLarge' | 'rocksMedium' | 'rocksSmall' | 'snowman' | 'sled' | 'bench';
+
+export interface PropPlacement {
+  kind: PropKind;
+  x: number;
+  z: number;
+  /** y축 회전(라디안) */
+  rotation?: number;
+  scale?: number;
+  /** 바닥 높이. 없으면 지형 높이(플랫폼, 데크 위는 직접 준다) */
+  y?: number;
+}
+
+const PLATFORM = 0.6;
+
+export const PROPS: PropPlacement[] = [
+  // 온천 거리 양옆: 집과 집 사이, 처마 밑에 쓸어 모은 눈
+  ...[26.3, 18.6, 11.2, 3.6].map((z, i): PropPlacement => ({ kind: 'snowPile', x: -5.7, z, rotation: i * 1.3, scale: 2.2 })),
+  ...[20.0, 12.6, 5.4, -0.9].map((z, i): PropPlacement => ({ kind: 'snowPile', x: 5.7, z, rotation: i * 1.7 + 0.5, scale: 2.2 })),
+  // 역 플랫폼 양 끝
+  { kind: 'snowPile', x: 15.2, z: 39.3, rotation: 0.4, scale: 2, y: PLATFORM },
+  { kind: 'snowPile', x: -15.2, z: 45.1, rotation: 2.1, scale: 2, y: PLATFORM },
+  // 광장 가장자리와 소원 등롱 벽 끝
+  { kind: 'snowPile', x: -6.5, z: -3.5, rotation: 1.0, scale: 2.4 },
+  { kind: 'snowPile', x: 6.6, z: -4.0, rotation: 2.6, scale: 2.4 },
+  { kind: 'snowPile', x: -5.9, z: -12.3, rotation: 0.2, scale: 1.8 },
+  // 온천 데크 구석
+  { kind: 'snowPile', x: 41.1, z: -18.9, rotation: 0.7, scale: 1.6, y: ONSEN.deckTop },
+  { kind: 'snowPile', x: 41.1, z: -29.1, rotation: 2.4, scale: 1.6, y: ONSEN.deckTop },
+
+  // 온천 데크 바깥
+  { kind: 'rocksLarge', x: 44.6, z: -21.5, rotation: 0.6, scale: 0.8 },
+  { kind: 'rocksMedium', x: 44.2, z: -26.6, rotation: 2.0 },
+  { kind: 'rocksSmall', x: 43.6, z: -30.2, rotation: 1.1 },
+  // 료칸 가는 길
+  { kind: 'rocksMedium', x: 25.2, z: -17.4, rotation: 0.3, scale: 0.8 },
+  { kind: 'rocksSmall', x: 13.2, z: -9.2, rotation: 2.7 },
+  // 자작나무 언덕 오르는 길
+  { kind: 'rocksLarge', x: -17.8, z: -23.4, rotation: 1.9, scale: 0.7 },
+  { kind: 'rocksMedium', x: -24.8, z: -22.6, rotation: 0.8 },
+  { kind: 'rocksSmall', x: -14.4, z: -16.6, rotation: 0.1 },
+  { kind: 'rocksMedium', x: -29.6, z: -27.8, rotation: 2.9, scale: 0.8 },
+
+  // 스폰 앞: 누가 만들어 둔 눈사람과 썰매
+  { kind: 'snowman', x: -3.4, z: 32.6, rotation: 0.4, scale: 1.3 },
+  { kind: 'sled', x: -2.0, z: 33.4, rotation: 1.2, scale: 1.2 },
+  { kind: 'snowman', x: 21.0, z: -12.4, rotation: -0.3, scale: 1.1 },
+  // 언덕 꼭대기 벤치 옆에 세워 둔 썰매
+  { kind: 'sled', x: -23.7, z: -29.3, rotation: 2.2, scale: 1.2 },
+
+  // 광장 등롱을 바라보는 벤치
+  { kind: 'bench', x: 4.7, z: -5.2, rotation: -Math.PI / 2, scale: 1.4 },
+  { kind: 'bench', x: -4.7, z: -5.2, rotation: Math.PI / 2, scale: 1.4 },
+];
+
+/** 이 근처에는 다른 소품(자작나무 등)을 놓지 않는다 */
+export function nearProp(x: number, z: number, radius: number) {
+  return PROPS.some((p) => p.kind !== 'snowPile' && Math.hypot(p.x - x, p.z - z) < radius);
+}
+
 // ── 충돌 그룹 ─────────────────────────────────────────
 
 /**

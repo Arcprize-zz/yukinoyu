@@ -3,7 +3,7 @@ import { Instance, Instances } from '@react-three/drei';
 import { CylinderCollider, RigidBody } from '@react-three/rapier';
 import { mulberry32 } from '../lib/random';
 import { Block, PALETTE } from '../scene/kit';
-import { HILL, PATHS, THIN_PROP_GROUPS, terrainHeight } from '../world/layout';
+import { HILL, PATHS, THIN_PROP_GROUPS, nearProp, terrainHeight } from '../world/layout';
 
 interface Birch {
   x: number;
@@ -33,7 +33,7 @@ function generateBirches(): Birch[] {
     const r = 4.5 + rand() * 13;
     const x = HILL.x + Math.cos(a) * r;
     const z = HILL.z + Math.sin(a) * r;
-    if (nearHillPath(x, z)) continue;
+    if (nearHillPath(x, z) || nearProp(x, z, 2)) continue;
     if (out.some((b) => Math.hypot(b.x - x, b.z - z) < 1.8)) continue;
     const h = 6 + rand() * 4;
     out.push({ x, y: terrainHeight(x, z), z, h, bands: [rand(), rand(), rand(), rand()].map((v) => 0.8 + v * (h - 1.5)) });

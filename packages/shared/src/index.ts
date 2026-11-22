@@ -1,5 +1,5 @@
 /**
- * 클라이언트와 서버(4주차 Colyseus)가 함께 쓰는 타입과 상수.
+ * 클라이언트와 서버(4단계 Colyseus)가 함께 쓰는 타입과 상수.
  * 네트워크로 오가는 모양은 여기서만 정의한다.
  */
 
@@ -17,7 +17,7 @@ export const WORLD = {
 
 export type PlayerAction = 'idle' | 'walk' | 'run' | 'jump' | 'sit' | 'bathe';
 
-/** 다른 방문객에게 보낼 내 상태(4주차부터 사용) */
+/** 다른 방문객에게 보낼 내 상태(4단계부터 사용) */
 export interface PlayerSnapshot {
   id: string;
   nick: string;

@@ -5,10 +5,10 @@ import type { ZoneId } from './world/layout';
 /** 온천 자동 입장 흐름: 자유 → 들어가는 중 → 앉음 → 나오는 중 → 자유 */
 export type BathMode = 'free' | 'entering' | 'seated' | 'leaving';
 
-/** 내 아이디. 4주차에 서버가 준 방문 번호로 바뀐다 */
+/** 내 아이디. 4단계에 서버가 준 방문 번호로 바뀐다 */
 export const ME = 'me';
 
-/** 디버그용 다른 입욕객(4주차에 실제 원격 플레이어로 바뀐다) */
+/** 디버그용 다른 입욕객(4단계에 실제 원격 플레이어로 바뀐다) */
 export interface Bather {
   id: string;
   x: number;
@@ -35,7 +35,7 @@ interface GameState {
   /** HUD 버튼 → Player로 전하는 요청. Player가 처리하고 지운다 */
   bathRequest: 'enter' | 'exit' | null;
   requestBath: (request: 'enter' | 'exit' | null) => void;
-  /** 자리별 예약자 id(없으면 null). 4주차부터는 서버가 내려주는 값으로 바뀐다 */
+  /** 자리별 예약자 id(없으면 null). 4단계부터는 서버가 내려주는 값으로 바뀐다 */
   seats: (string | null)[];
   /** 비어 있을 때만 예약된다. 서버의 판정을 흉내 낸다 */
   claimSeat: (seat: number, who: string) => boolean;
@@ -79,7 +79,7 @@ export const useGame = create<GameState>((set, get) => ({
 }));
 
 /**
- * 다른 사람들의 이번 프레임 위치(나 제외). 4주차에는 서버 동기화가 매 프레임 덮어쓴다.
+ * 다른 사람들의 이번 프레임 위치(나 제외). 4단계에는 서버 동기화가 매 프레임 덮어쓴다.
  * 자리 예약 없이 탕 안에 서 있는 사람도 자리를 막도록 쓰인다.
  */
 export const otherPlayers = new Map<string, { x: number; z: number }>();

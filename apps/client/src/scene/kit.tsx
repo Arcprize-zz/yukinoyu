@@ -1,6 +1,6 @@
 /**
  * 그레이박스 조립 도구. 보이는 모양과 충돌체를 한 번에 만든다.
- * 3주차 아트 작업에서 같은 자리에 에셋을 바꿔 끼운다.
+ * 3단계 아트 작업에서 같은 자리에 에셋을 바꿔 끼운다.
  */
 import { useMemo, type ComponentProps } from 'react';
 import { CuboidCollider } from '@react-three/rapier';

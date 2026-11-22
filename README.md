@@ -21,7 +21,7 @@ apps/client      React + TypeScript + Vite + React Three Fiber
   src/player     Rapier 캐릭터 컨트롤러, 3인칭 카메라(벽 충돌), 아바타
   src/ui         HUD, 구역 이름 표시, 디버그 좌표
 packages/shared  클라이언트와 서버가 함께 쓰는 타입, 상수
-apps/server      (4주차) Colyseus 멀티플레이 서버
+apps/server      (4단계) Colyseus 멀티플레이 서버
 ```
 
 ## 조작
@@ -40,6 +40,9 @@ apps/server      (4주차) Colyseus 멀티플레이 서버
   - `B` : 빈자리에 앉는 가짜 입욕객, `V` : 내가 가는 자리에 서 있는 가짜 입욕객(자리 양보 확인용)
 - `?debug=physics` : 위에 더해 충돌체 외곽선
 
-## 기록해 둘 성능 수치 (7주차 최적화 전후 비교용)
+## 기록해 둘 성능 수치 (7단계 최적화 전후 비교용)
 
-- 1주차 빌드 JS: 3,542 kB (gzip 1,210 kB). Rapier WASM이 번들에 포함됨 → 코드 분할 대상
+- 1단계 빌드 JS: 3,542 kB (gzip 1,210 kB). Rapier WASM이 번들에 포함됨 → 코드 분할 대상
+- 3단계 빌드 JS: 3,820 kB (gzip 1,330 kB). 후처리(N8AO, 톤매핑) 추가분. 모델 파일(public/models) 1.0 MB
+- 3단계 소나무: Quaternius 원본 텍스처 8 MB+ → 껍질 텍스처를 빼서 모델 3종 합계 736 kB
+- 3단계 FPS(165Hz 모니터, 개발 서버): 톤매핑 + N8AO + 소나무 교체 후 137~165

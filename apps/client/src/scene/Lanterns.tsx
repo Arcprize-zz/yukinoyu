@@ -29,13 +29,14 @@ function GasLamp({ position }: { position: [number, number, number] }) {
         <cylinderGeometry args={[0.06, 0.09, 2.6, 8]} />
         <meshStandardMaterial color="#26262b" roughness={0.6} metalness={0.4} />
       </mesh>
-      {/* 유리 등: 톤매핑을 끄고 밝기를 1 이상으로 줘서 블룸이 걸리게 한다 */}
+      {/* 유리 등: 밝기를 1 이상으로 줘서 블룸이 걸리게 한다.
+          너무 밝으면 톤매핑에서 하얗게 타므로 주황빛이 남는 정도로 */}
       <mesh position={[0, 2.85, 0]}>
         <boxGeometry args={[0.32, 0.42, 0.32]} />
         <meshStandardMaterial
-          color="#ffcf8a"
-          emissive="#ffb766"
-          emissiveIntensity={4}
+          color="#ffb870"
+          emissive="#ff9a45"
+          emissiveIntensity={2.4}
           toneMapped={false}
         />
       </mesh>
