@@ -25,6 +25,7 @@ export function Hud() {
         <p>홋카이도의 겨울 · 프로토타입</p>
       </div>
       <div className="hud__status">{ACTION_LABEL[action]}</div>
+      <NetBadge />
       <ZoneToast />
       <OnsenButton />
       {DEBUG && <DebugReadout />}
@@ -43,6 +44,21 @@ export function Hud() {
         </span>
         <span>드래그 시점 · 휠 거리</span>
       </div>
+    </div>
+  );
+}
+
+/** 접속 상태, 내 별명, 함께 있는 사람 수 */
+function NetBadge() {
+  const status = useGame((s) => s.netStatus);
+  const me = useGame((s) => s.me);
+  const others = useGame((s) => s.remotes.length);
+  if (status === 'connecting') return <div className="hud__net hud__net--connecting">마을에 들어가는 중…</div>;
+  if (status === 'offline' || !me) return <div className="hud__net hud__net--offline">혼자 걷는 중</div>;
+  return (
+    <div className="hud__net">
+      <strong>{me.nick}</strong>
+      <span>{others > 0 ? `${others + 1}명이 함께 있어요` : '아직 혼자예요'}</span>
     </div>
   );
 }

@@ -5,8 +5,22 @@ import type { ZoneId } from './world/layout';
 /** 온천 자동 입장 흐름: 자유 → 들어가는 중 → 앉음 → 나오는 중 → 자유 */
 export type BathMode = 'free' | 'entering' | 'seated' | 'leaving';
 
-/** 내 아이디. 4단계에 서버가 준 방문 번호로 바뀐다 */
-export const ME = 'me';
+/** 내 아이디. 서버에 접속하면 sessionId로 바뀐다(ES 모듈 live binding이라 import한 곳에서도 바뀐 값이 보인다) */
+export let ME = 'me';
+export function setMe(id: string) {
+  ME = id;
+}
+
+/** 서버 접속 상태. offline이면 혼자 노는 모드(자리 예약도 로컬에서 흉내) */
+export type NetStatus = 'connecting' | 'online' | 'offline';
+
+/** 원격 플레이어의 바뀌지 않는 정보. 매 프레임 바뀌는 위치는 net/remoteFrames.ts에 둔다 */
+export interface RemoteInfo {
+  id: string;
+  nick: string;
+  hat: string;
+  scarf: string;
+}
 
 /** 디버그용 다른 입욕객(4단계에 실제 원격 플레이어로 바뀐다) */
 export interface Bather {
@@ -35,11 +49,21 @@ interface GameState {
   /** HUD 버튼 → Player로 전하는 요청. Player가 처리하고 지운다 */
   bathRequest: 'enter' | 'exit' | null;
   requestBath: (request: 'enter' | 'exit' | null) => void;
-  /** 자리별 예약자 id(없으면 null). 4단계부터는 서버가 내려주는 값으로 바뀐다 */
+  /** 자리별 예약자 id(없으면 null). 접속 중에는 서버 상태를 비춘다(net/connection.ts) */
   seats: (string | null)[];
-  /** 비어 있을 때만 예약된다. 서버의 판정을 흉내 낸다 */
+  /**
+   * 비어 있을 때만 예약된다. 혼자 모드에서는 서버 판정을 흉내 내고,
+   * 접속 중에는 net/connection.ts가 서버에 요청하는 함수로 바꿔 끼운다(낙관적으로 true를 먼저 돌려줌)
+   */
   claimSeat: (seat: number, who: string) => boolean;
   releaseSeat: (who: string) => void;
+
+  // ── 네트워크 ──
+  netStatus: NetStatus;
+  /** 서버가 정해 준 내 별명과 색(혼자 모드면 null) */
+  me: { nick: string; hat: string; scarf: string } | null;
+  /** 나를 뺀 접속자. 들어오고 나갈 때만 바뀐다 */
+  remotes: RemoteInfo[];
 
   // ── 디버그 입욕객 ──
   bathers: Bather[];
@@ -71,6 +95,10 @@ export const useGame = create<GameState>((set, get) => ({
   },
   releaseSeat: (who) => set({ seats: get().seats.map((s) => (s === who ? null : s)) }),
 
+  netStatus: 'connecting',
+  me: null,
+  remotes: [],
+
   bathers: [],
   addBather: (bather) => {
     set({ bathers: [...get().bathers, bather] });
@@ -101,6 +129,10 @@ export const playerFrame = {
   bathing: false,
   moving: false,
   targetSeat: null as number | null,
+  /** 바라보는 방향(y축 회전) */
+  ry: Math.PI,
+  /** 서버로 보낼 동작. 탕 안 자리에 앉아 있으면 'sit' */
+  action: 'idle' as PlayerAction,
   /** 디버그 표시용 카메라 위치 */
   camera: [0, 0, 0] as [number, number, number],
 };

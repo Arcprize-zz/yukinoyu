@@ -107,6 +107,9 @@ export class BathAutopilot {
   private recheckSeat() {
     if (this.seat === null) return;
     const blocked = this.blockedSeats();
+    // 서버가 예약을 거절하면 seats에서 내 이름이 빠진다(그 자리는 다시 고르지 않는다)
+    const lost = useGame.getState().seats[this.seat] !== ME;
+    if (lost) blocked.add(this.seat);
     if (!blocked.has(this.seat)) return;
     this.releaseSeat();
     // 원래 가려던 자리에서 가장 가까운 빈자리

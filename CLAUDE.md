@@ -22,9 +22,14 @@
 ```bash
 npm install
 npm run dev         # http://localhost:5173
+npm run dev:server  # Colyseus 서버 ws://0.0.0.0:2567 (tsx watch)
 npm run typecheck   # 모든 워크스페이스
 npm run build
+npm run smoke -w @yukinoyu/server [ws://주소:2567]    # 봇 두 개로 접속, 동기화, 자리 예약 확인
+npm run walker -w @yukinoyu/server [ws://주소:2567] [초]  # 스폰 앞에서 원을 그리며 걷는 봇(보간 눈으로 확인)
 ```
+
+서버는 맥북, 클라이언트는 윈도우 PC(같은 와이파이)에서 띄운다. PC에서는 `apps/client/.env.example`을 `.env.local`로 복사해 `VITE_SERVER_URL=ws://<맥북 IP>:2567`을 적는다. 비워 두면 페이지를 연 호스트의 2567 포트로 접속하고, 접속에 실패하면 혼자 모드로 진행한다. 서버 확인: `http://<맥북 IP>:2567/health`
 
 작업을 마치면 `npm run typecheck`를 통과시키고, 화면에 보이는 변경은 브라우저에서 확인한다.
 
@@ -37,10 +42,17 @@ apps/client      React 19 + TypeScript + Vite + React Three Fiber + drei + rapie
   src/world/layout.ts   맵 배치의 단일 기준(구역, 지형 높이, 길, 가스등 위치, 충돌 그룹)
   src/scene      하늘, 지형, 나무, 가스등, 눈, 후처리, 그레이박스 도구(kit.tsx)
   src/zones      간이역, 온천 거리, 료칸 + 노천온천, 자작나무 언덕
-  src/player     캐릭터 컨트롤러, 3인칭 카메라, 아바타
+  src/player     캐릭터 컨트롤러, 3인칭 카메라, 아바타, 원격 플레이어(RemotePlayers)
+  src/net        서버 접속(connection.ts), 원격 위치 보간(remoteFrames.ts)
   src/ui         HUD
-packages/shared  클라이언트와 서버가 함께 쓰는 타입, 상수(PlayerSnapshot, WORLD)
-apps/server      (4단계 예정) Colyseus. 백엔드와 DB는 맥북에서 돌린다
+packages/shared  클라이언트와 서버가 함께 쓰는 타입, 상수
+  src/world.ts   PlayerSnapshot, WORLD
+  src/onsen.ts   온천 자리와 빈자리 판정
+  src/net.ts     메시지 이름(MSG), 주기(SYNC), 색 팔레트, move 검사(sanitizeMove)
+apps/server      Colyseus 0.18 (tsx로 실행). 백엔드와 DB는 맥북에서 돌린다
+  src/OnsenRoom.ts  방 하나(onsen): 별명, 색, 위치 받기, 자리 예약 판정
+  src/state.ts   방 상태 스키마(schema() 함수, 데코레이터 안 씀)
+  scripts/       확인용 봇(smoke, walker)
 ```
 
 ## 규칙
@@ -84,8 +96,21 @@ apps/server      (4단계 예정) Colyseus. 백엔드와 DB는 맥북에서 돌�
 
 ### 온천 자리
 - 자리 좌표와 빈자리 고르기(`ONSEN_SEATS`, `pickSeat`, `seatsNear`)는 `packages/shared/src/onsen.ts`에 둔다. 4단계 서버가 같은 함수로 자리 예약을 판정한다
-- 자리 예약은 지금은 zustand `seats`(서버 흉내), 4단계부터 서버가 내려주는 값으로 바꾼다. 클라이언트는 예약 결과를 따르기만 한다
+- 자리 예약은 접속 중에는 서버가 판정하고 zustand `seats`가 서버 상태를 비춘다. 혼자 모드에서는 `seats`가 서버를 흉내 낸다. 클라이언트는 예약 결과를 따르기만 한다
 - 자동 입장/퇴장은 `player/bathAutopilot.ts`. Player는 요청을 전하고 방향만 받아 움직인다
+
+### 네트워크 (4단계)
+- 메시지 이름, 모양, 주기는 `packages/shared/src/net.ts`에만 둔다. 서버 상태 필드는 `PlayerSnapshot`과 같은 뜻으로 맞춘다
+- 위치는 클라이언트가 보내고 서버는 검사만 한다(`sanitizeMove`: 모양, 범위, 초당 개수). 자리 예약은 서버가 판정한다
+- 클라이언트는 `SYNC.sendIntervalMs`마다 바뀐 경우에만 보낸다. 서버 `patchRate`와 같게 둔다
+- 원격 위치는 `net/remoteFrames.ts`의 스냅샷 버퍼에서 `SYNC.interpDelayMs`만큼 과거를 보간해 그린다. 외삽하지 않는다(멈출 때 지나쳤다 돌아오는 게 더 거슬림). `SYNC.snapDistance` 넘게 움직이면 바로 옮긴다
+- 원격 플레이어 목록(들어오고 나감, 별명, 색)만 zustand `remotes`, 매 프레임 위치는 remoteFrames와 ref
+- 원격 아바타의 useFrame은 우선순위 `-1`로 둔다. 자식 drei `Html`(별명 라벨)이 먼저 돌면 라벨이 한 프레임 늦게 따라온다
+- 서버 접속은 `main.tsx`에서 React 바깥에서 한 번만 한다(StrictMode 이펙트 두 번 실행 피하기)
+- 접속 중 자리 예약은 낙관적이다: `claimSeat`가 바로 true를 돌려주고 `room.request`로 확인받는다. 거절되면 `seats`에서 내 이름이 빠지고 `bathAutopilot.recheckSeat`가 다른 자리로 바꾼다
+- `room.request`의 답장은 바로 오지만 상태 패치는 `patchRate`마다 묶여서 온다(같은 와이파이에서 답장 약 5ms, 패치 최대 50ms). 승인 답장을 받았다고 서버 상태를 다시 읽으면 내 이름이 아직 없다. 승인된 예약(`pendingSeat`)은 패치에서 확인될 때까지 유지하고, 거절 답장일 때만 지운다(지우면 거절된 줄 알고 자리를 계속 바꾼다)
+- 서버의 빈자리는 `''`, 클라이언트 `seats`에서는 `null`
+- 맥북 방화벽이 켜져 있으면 node의 들어오는 연결을 허용해야 PC에서 접속된다(시스템 설정 → 네트워크 → 방화벽 → 옵션)
 
 ### 입력
 - 키는 `event.code`(`KeyW` 등)로 받는다. 한글 입력 상태에서도 동작해야 한다
@@ -93,7 +118,7 @@ apps/server      (4단계 예정) Colyseus. 백엔드와 DB는 맥북에서 돌�
 ## 디버그
 
 - `?debug` : 좌표, 카메라 위치, FPS, 숫자키 `1`~`4`로 구역 순간이동, `window.__physics`(Rapier world)
-  - `B` : 빈자리에 앉는 가짜 입욕객 추가 / `V` : 내가 가는 자리에 예약 없이 서 있는 가짜 입욕객 추가
+  - `B` : 빈자리에 앉는 가짜 입욕객 추가(혼자 모드에서만. 서버에 없는 사람이라 접속 중에는 예약하지 않음) / `V` : 내가 가는 자리에 예약 없이 서 있는 가짜 입욕객 추가
 - `?debug=physics` : 충돌체 외곽선까지
 
 ## Git
@@ -110,7 +135,7 @@ apps/server      (4단계 예정) Colyseus. 백엔드와 DB는 맥북에서 돌�
 | 1 ✅ | 모노레포, R3F 세팅, 캐릭터 이동과 카메라, 지형, 4구역 그레이박스, 충돌 |
 | 2 ✅ | 노천온천: 수면 셰이더, 김, 입욕 연출 |
 | 3 ✅ | 에셋 교체, 조명, 포스트프로세싱 |
-| 4 | Colyseus 서버, 별명, 위치 보간 동기화 |
+| 4 ✅ | Colyseus 서버, 별명, 위치 보간 동기화 |
 | 5 | 동작 동기화, 재접속, 오디오(BGM, 환경음) |
 | 6 | 소원 등롱(API + DB + 신고/필터) |
 | 7 | 성능 측정과 최적화, 배포, README |

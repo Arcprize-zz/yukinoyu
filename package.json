@@ -8,6 +8,8 @@
   ],
   "scripts": {
     "dev": "npm run dev -w @yukinoyu/client",
+    "dev:server": "npm run dev -w @yukinoyu/server",
+    "start:server": "npm run start -w @yukinoyu/server",
     "build": "npm run build -w @yukinoyu/client",
     "typecheck": "npm run typecheck --workspaces --if-present"
   },

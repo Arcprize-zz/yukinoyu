@@ -1,0 +1,23 @@
+/** 월드 좌표, 플레이어 상태 타입. 네트워크로 오가는 모양의 기준이다 */
+export type Vec3 = readonly [number, number, number];
+
+/** 월드 크기와 스폰 위치. 1 = 1m, 처음 바라보는 방향이 -z */
+export const WORLD = {
+  /** 걸어 다닐 수 있는 정사각형 한 변의 절반 */
+  halfSize: 60,
+  /** 기차역 플랫폼 위 */
+  spawn: [0, 2, 42] as Vec3,
+} as const;
+
+export type PlayerAction = 'idle' | 'walk' | 'run' | 'jump' | 'sit' | 'bathe';
+
+/** 다른 방문객에게 보낼 내 상태(4단계부터 사용) */
+export interface PlayerSnapshot {
+  id: string;
+  nick: string;
+  /** 발 위치 */
+  p: Vec3;
+  /** 바라보는 방향(라디안, y축 회전) */
+  ry: number;
+  action: PlayerAction;
+}

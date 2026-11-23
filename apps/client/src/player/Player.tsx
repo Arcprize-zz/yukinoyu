@@ -98,6 +98,8 @@ export function Player() {
   const autopilot = useMemo(() => new BathAutopilot(), []);
   // 바뀔 때만 리렌더된다(옷 갈아입기는 드물게 일어나는 일)
   const bathing = useGame((s) => s.action === 'bathe');
+  // 서버가 정해 준 모자, 목도리 색(혼자 모드면 기본색)
+  const look = useGame((s) => s.me);
   const smoothLook = useRef(new THREE.Vector3(...WORLD.spawn));
   const lastAction = useRef<PlayerAction>('idle');
   const setAction = useGame((s) => s.setAction);
@@ -280,6 +282,9 @@ export function Player() {
     playerFrame.bathing = inBath;
     playerFrame.moving = moving;
     playerFrame.targetSeat = autopilot.seat;
+    playerFrame.ry = m.facing;
+    // 다른 사람 화면에서 자리에 앉은 자세로 보이도록, 탕 안 자리에 앉아 있으면 'sit'으로 보낸다
+    playerFrame.action = seated && inBath ? 'sit' : action;
     state.camera.position.toArray(playerFrame.camera);
 
     // 7) 데크 입구 근처면 '온천 즐기기' 버튼을 띄운다
@@ -300,7 +305,7 @@ export function Player() {
       </RigidBody>
       <group ref={avatarRoot}>
         <group ref={avatarBob}>
-          <Avatar bathing={bathing} />
+          <Avatar bathing={bathing} hat={look?.hat} scarf={look?.scarf} />
         </group>
       </group>
     </>

@@ -1,0 +1,24 @@
+{
+  "name": "@yukinoyu/server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit -p .",
+    "smoke": "tsx scripts/smoke.ts",
+    "walker": "tsx scripts/walker.ts"
+  },
+  "dependencies": {
+    "@colyseus/schema": "^5.0.50",
+    "@yukinoyu/shared": "*",
+    "colyseus": "^0.18.12"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "@colyseus/sdk": "^0.18.10"
+  }
+}
